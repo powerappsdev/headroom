@@ -70,6 +70,43 @@ public sealed class IntervalLabelConverter : IValueConverter
         Binding.DoNothing;
 }
 
+/// <summary>
+/// Turns an enum value into a readable label ("NextReset" becomes "Next reset").
+/// </summary>
+/// <remarks>
+/// A picker showing PascalCase is a picker showing an implementation detail.
+/// Splitting on case keeps the labels correct automatically when a new value is
+/// added, rather than relying on a lookup table someone has to remember to
+/// update.
+/// </remarks>
+public sealed class EnumLabelConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var name = value?.ToString();
+        if (string.IsNullOrEmpty(name)) return string.Empty;
+
+        var builder = new System.Text.StringBuilder(name.Length + 4);
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (i > 0 && char.IsUpper(c))
+            {
+                builder.Append(' ');
+                builder.Append(char.ToLower(c, culture));
+                continue;
+            }
+
+            builder.Append(c);
+        }
+
+        return builder.ToString();
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Binding.DoNothing;
+}
+
 /// <summary>Maps the provider enum to a two-item combo box index, and back.</summary>
 public sealed class ProviderIndexConverter : IValueConverter
 {

@@ -21,6 +21,7 @@
       <views:EqualityConverter x:Key="Equality" />
       <views:IntervalLabelConverter x:Key="IntervalLabel" />
       <views:ProviderIndexConverter x:Key="ProviderIndex" />
+      <views:EnumLabelConverter x:Key="EnumLabel" />
     </ResourceDictionary>
   </Application.Resources>
 </Application>

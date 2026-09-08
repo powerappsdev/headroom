@@ -22,7 +22,7 @@
       <StackPanel>
 
         <!-- Accounts -->
-        <TextBlock Text="Accounts" Style="{StaticResource SectionHeader}" />
+        <TextBlock Text="ACCOUNTS" Style="{StaticResource SectionHeader}" />
         <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" Margin="0,0,0,12" LineHeight="16"
                    Text="Each account points at a profile folder the CLI already owns. Headroom only reads from these folders — it never writes a credential, never signs you in, and never signs you out." />
 
@@ -49,14 +49,14 @@
 
                   <TextBox Grid.Row="0" Grid.Column="0"
                            Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"
-                           Padding="6,4"
+                           MinHeight="28"
                            VerticalContentAlignment="Center"
                            ToolTip="Display name" />
 
                   <ComboBox Grid.Row="0" Grid.Column="1"
-                            Width="94"
+                            Width="104"
                             Margin="8,0,0,0"
-                            Padding="6,4"
+                            VerticalAlignment="Stretch"
                             SelectedIndex="{Binding Provider, Mode=TwoWay, Converter={StaticResource ProviderIndex}}">
                     <ComboBoxItem Content="Claude" />
                     <ComboBoxItem Content="Codex" />
@@ -84,7 +84,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
                              Text="{Binding ProfileDirectory, UpdateSourceTrigger=PropertyChanged}"
-                             Padding="6,4"
+                             MinHeight="28"
                              FontSize="{StaticResource FontSizeCaption}"
                              VerticalContentAlignment="Center"
                              ToolTip="CLAUDE_CONFIG_DIR or CODEX_HOME for this account" />
@@ -108,17 +108,17 @@
         </StackPanel>
 
         <!-- Refresh -->
-        <TextBlock Text="Refresh" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionRule}" />
+        <TextBlock Text="REFRESH" Style="{StaticResource SectionHeader}" />
         <CheckBox Content="Refresh automatically"
                   IsChecked="{Binding AutoRefresh}"
                   Foreground="{DynamicResource TextPrimaryBrush}"
                   Margin="0,0,0,10" />
 
         <TextBlock Text="How often" Style="{StaticResource FieldLabel}" />
-        <ComboBox Width="180"
+        <ComboBox Width="200"
                   HorizontalAlignment="Left"
-                  Padding="6,4"
-                  Margin="0,0,0,6"
+                  Margin="0,0,0,8"
                   ItemsSource="{Binding IntervalChoices}"
                   SelectedItem="{Binding RefreshIntervalSeconds}">
           <ComboBox.ItemTemplate>
@@ -131,7 +131,8 @@
                    Text="Opening the deck also refreshes, and a failed poll backs off on its own — so a slower interval here costs you nothing in practice." />
 
         <!-- Alerts -->
-        <TextBlock Text="Alerts" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionRule}" />
+        <TextBlock Text="ALERTS" Style="{StaticResource SectionHeader}" />
         <CheckBox Content="Notify me when an account crosses a threshold"
                   IsChecked="{Binding NotificationsEnabled}"
                   Foreground="{DynamicResource TextPrimaryBrush}"
@@ -163,15 +164,28 @@
                    Text="Notifications fire once, at the crossing — not every time a poll finds you still low." />
 
         <!-- Appearance -->
-        <TextBlock Text="Appearance" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionRule}" />
+        <TextBlock Text="APPEARANCE" Style="{StaticResource SectionHeader}" />
 
         <TextBlock Text="Theme" Style="{StaticResource FieldLabel}" />
-        <ComboBox Width="180" HorizontalAlignment="Left" Padding="6,4" Margin="0,0,0,12"
-                  ItemsSource="{Binding ThemeChoices}" SelectedItem="{Binding Theme}" />
+        <ComboBox Width="200" HorizontalAlignment="Left" Margin="0,0,0,14"
+                  ItemsSource="{Binding ThemeChoices}" SelectedItem="{Binding Theme}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
 
         <TextBlock Text="Sort accounts by" Style="{StaticResource FieldLabel}" />
-        <ComboBox Width="180" HorizontalAlignment="Left" Padding="6,4" Margin="0,0,0,12"
-                  ItemsSource="{Binding SortChoices}" SelectedItem="{Binding Sort}" />
+        <ComboBox Width="200" HorizontalAlignment="Left" Margin="0,0,0,14"
+                  ItemsSource="{Binding SortChoices}" SelectedItem="{Binding Sort}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
 
         <CheckBox Content="Always show the percentage in the notification area"
                   IsChecked="{Binding AlwaysShowPercent}"
@@ -185,9 +199,11 @@
                   Margin="0,0,0,22" />
 
         <!-- Data -->
-        <TextBlock Text="Data" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionRule}" />
+        <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" />
         <TextBlock Text="Keep history for (days)" Style="{StaticResource FieldLabel}" />
-        <TextBox Width="90" HorizontalAlignment="Left" Padding="6,4" Margin="0,0,0,10"
+        <TextBox Width="100" HorizontalAlignment="Left" MinHeight="28" Margin="0,0,0,12"
+                 VerticalContentAlignment="Center"
                  Text="{Binding HistoryRetentionDays}" />
         <TextBlock x:Name="DataPathText"
                    Style="{StaticResource CaptionText}"
