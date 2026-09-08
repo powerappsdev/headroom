@@ -20,6 +20,7 @@ public sealed class HeadroomPaths
 
         HistoryDirectory = Path.Combine(Root, "history");
         SettingsFile = Path.Combine(Root, "settings.json");
+        StateFile = Path.Combine(Root, "state.json");
         LogFile = Path.Combine(Root, "headroom.log");
     }
 
@@ -28,6 +29,13 @@ public sealed class HeadroomPaths
     public string HistoryDirectory { get; }
 
     public string SettingsFile { get; }
+
+    /// <summary>
+    /// A plain-text snapshot of what the last refresh found, written for
+    /// support and troubleshooting. It carries availability, windows and
+    /// timestamps - never a token, and never an account's email address.
+    /// </summary>
+    public string StateFile { get; }
 
     public string LogFile { get; }
 

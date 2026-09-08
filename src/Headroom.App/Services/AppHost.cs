@@ -26,6 +26,7 @@ public sealed class AppHost : IDisposable
     private readonly SettingsStore _settingsStore;
     private readonly CancellationTokenSource _shutdown = new();
 
+    private readonly StateSnapshotWriter _state;
     private RefreshCoordinator _coordinator;
     private HeadroomSettings _settings;
     private string? _claudeCliVersion;
@@ -37,6 +38,7 @@ public sealed class AppHost : IDisposable
 
         _settingsStore = new SettingsStore(Paths);
         History = new UsageHistoryStore(Paths);
+        _state = new StateSnapshotWriter(Paths);
         _settings = _settingsStore.Load();
 
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
@@ -76,8 +78,12 @@ public sealed class AppHost : IDisposable
         remove => _coordinator.DeckUpdated -= value;
     }
 
-    public Task<DeckSnapshot> RefreshAsync(bool force) =>
-        _coordinator.RefreshAsync(force, _shutdown.Token);
+    public async Task<DeckSnapshot> RefreshAsync(bool force)
+    {
+        var deck = await _coordinator.RefreshAsync(force, _shutdown.Token).ConfigureAwait(false);
+        _state.Write(deck);
+        return deck;
+    }
 
     /// <summary>Applies edited settings, rebuilding only what actually changed.</summary>
     public async Task ApplySettingsAsync(HeadroomSettings settings, EventHandler<DeckSnapshot>? deckHandler)
@@ -134,13 +140,21 @@ public sealed class AppHost : IDisposable
             var executable = ExecutableResolver.Resolve(_settings.ClaudeCommand);
             if (executable is null) return;
 
-            var startInfo = new ProcessStartInfo(executable)
+            var isBatch = ExecutableResolver.IsBatchScript(executable);
+            var startInfo = new ProcessStartInfo(isBatch ? "cmd.exe" : executable)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
             };
+
+            if (isBatch)
+            {
+                startInfo.ArgumentList.Add("/c");
+                startInfo.ArgumentList.Add(executable);
+            }
+
             startInfo.ArgumentList.Add("--version");
 
             using var process = Process.Start(startInfo);

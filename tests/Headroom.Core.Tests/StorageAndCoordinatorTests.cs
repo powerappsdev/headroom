@@ -489,6 +489,70 @@ public static class DiscoveryTests
     }
 }
 
+public static class StateSnapshotTests
+{
+    [Test("The snapshot reports whether an identity exists, never what it is")]
+    public static void NeverWritesAnIdentity()
+    {
+        var deck = new DeckSnapshot
+        {
+            GeneratedAt = Start,
+            Accounts = new[]
+            {
+                new AccountSnapshot
+                {
+                    AccountId = "a",
+                    DisplayName = "Work",
+                    Provider = ProviderKind.Claude,
+                    Identity = "dan@example.invalid",
+                    Availability = AccountAvailability.Idle,
+                    Detail = "Idle - renews on next use.",
+                    Windows = new[]
+                    {
+                        new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = 40 },
+                    },
+                },
+            },
+        };
+
+        var json = StateSnapshotWriter.Render(deck);
+
+        Check.False(json.Contains("dan@example.invalid", StringComparison.Ordinal),
+            "the snapshot must never carry an account email");
+        Check.Contains("\"identityKnown\": true", json);
+        Check.Contains("Idle", json);
+        Check.Contains("5-hour", json);
+        Check.Contains("60", json, "remaining percent should be rendered");
+    }
+
+    [Test]
+    public static void ReportsAnAccountWithNoDataAtAll()
+    {
+        var deck = new DeckSnapshot
+        {
+            GeneratedAt = Start,
+            Accounts = new[]
+            {
+                new AccountSnapshot
+                {
+                    AccountId = "a",
+                    DisplayName = "Codex",
+                    Provider = ProviderKind.Codex,
+                    Availability = AccountAvailability.SignedOut,
+                    Detail = "No stored sign-in.",
+                },
+            },
+        };
+
+        var json = StateSnapshotWriter.Render(deck);
+
+        Check.Contains("SignedOut", json);
+        Check.Contains("\"identityKnown\": false", json);
+    }
+
+    private static readonly DateTimeOffset Start = Moment.At("2026-09-07T12:00:00Z");
+}
+
 public static class ExecutableResolverTests
 {
     [Test("An explicit path is honoured exactly as given")]
@@ -531,6 +595,40 @@ public static class ExecutableResolverTests
             // behaviour, so only assert that the lookup stays exception-free here.
             Check.True(resolved is null or { Length: > 0 });
         }
+    }
+
+    [Test("npm ships a bare Unix script beside its .cmd shim; Windows must not pick the script")]
+    public static void PrefersTheRunnableShimOverTheBareScript()
+    {
+        using var workspace = new TempWorkspace();
+
+        // Exactly what `npm i -g` leaves behind on Windows.
+        File.WriteAllText(Path.Combine(workspace.Root, "codex"), "#!/bin/sh\n");
+        File.WriteAllText(Path.Combine(workspace.Root, "codex.cmd"), "@echo off\n");
+        File.WriteAllText(Path.Combine(workspace.Root, "codex.ps1"), "# shim\n");
+
+        var resolved = ExecutableResolver.Resolve("codex", workspace.Root, ".COM;.EXE;.BAT;.CMD");
+
+        if (OperatingSystem.IsWindows())
+        {
+            Check.True(
+                ExecutableResolver.IsBatchScript(resolved),
+                $"expected the .cmd shim, got '{resolved}' - a bare extension-less script cannot be executed on Windows");
+        }
+        else
+        {
+            Check.Equal(Path.Combine(workspace.Root, "codex"), resolved);
+        }
+    }
+
+    [Test]
+    public static void RecognisesBatchShims()
+    {
+        Check.True(ExecutableResolver.IsBatchScript(@"C:\npm\codex.cmd"));
+        Check.True(ExecutableResolver.IsBatchScript(@"C:\npm\codex.BAT"));
+        Check.False(ExecutableResolver.IsBatchScript(@"C:\bin\claude.exe"));
+        Check.False(ExecutableResolver.IsBatchScript(@"C:\npm\codex.ps1"));
+        Check.False(ExecutableResolver.IsBatchScript(null));
     }
 
     [Test]

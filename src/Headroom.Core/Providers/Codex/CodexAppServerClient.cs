@@ -61,7 +61,10 @@ public sealed class CodexAppServerClient : ICodexAppServer
                 "The Codex CLI was not found on PATH.");
         }
 
-        var startInfo = new ProcessStartInfo(executable)
+        // npm installs the Codex CLI as a .cmd shim on Windows, and CreateProcess
+        // cannot start one directly - it has to go through the command processor.
+        var isBatch = ExecutableResolver.IsBatchScript(executable);
+        var startInfo = new ProcessStartInfo(isBatch ? "cmd.exe" : executable)
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -69,6 +72,13 @@ public sealed class CodexAppServerClient : ICodexAppServer
             RedirectStandardOutput = true,
             RedirectStandardError = true,
         };
+
+        if (isBatch)
+        {
+            startInfo.ArgumentList.Add("/c");
+            startInfo.ArgumentList.Add(executable);
+        }
+
         startInfo.ArgumentList.Add("app-server");
         startInfo.ArgumentList.Add("--stdio");
         if (!string.IsNullOrWhiteSpace(profileDirectory))

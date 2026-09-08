@@ -58,12 +58,24 @@ public static class ExecutableResolver
         return null;
     }
 
+    /// <summary>
+    /// The candidate suffixes to try, in the order Windows itself would.
+    /// </summary>
+    /// <remarks>
+    /// The extension-less name must be tried LAST on Windows, not first. npm
+    /// installs three files side by side for a global CLI - a bare Unix shell
+    /// script with no extension, a <c>.cmd</c> shim and a <c>.ps1</c> shim - and
+    /// only the shims are runnable. Trying the bare name first finds the shell
+    /// script, which Windows cannot execute at all, so the resolver "succeeds"
+    /// and every launch then fails. This is exactly how the Codex probe broke:
+    /// <c>%APPDATA%\npm\codex</c> exists and is useless.
+    /// </remarks>
     private static IReadOnlyList<string> Extensions(bool isWindows, string? pathExtVariable)
     {
         if (!isWindows) return new[] { string.Empty };
 
         var raw = pathExtVariable ?? Environment.GetEnvironmentVariable("PATHEXT");
-        var extensions = new List<string> { string.Empty };
+        var extensions = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(raw))
         {
@@ -72,7 +84,8 @@ public static class ExecutableResolver
                 var normalized = extension.Trim();
                 if (normalized.Length == 0) continue;
                 if (!normalized.StartsWith('.')) normalized = "." + normalized;
-                extensions.Add(normalized);
+                if (!extensions.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+                    extensions.Add(normalized);
             }
         }
         else
@@ -84,6 +97,23 @@ public static class ExecutableResolver
         if (!extensions.Contains(".CMD", StringComparer.OrdinalIgnoreCase)) extensions.Add(".CMD");
         if (!extensions.Contains(".EXE", StringComparer.OrdinalIgnoreCase)) extensions.Add(".EXE");
 
+        // Only after every real executable extension has been ruled out.
+        extensions.Add(string.Empty);
+
         return extensions;
     }
+
+    /// <summary>
+    /// True when a resolved path is a batch shim rather than a real executable.
+    /// </summary>
+    /// <remarks>
+    /// CreateProcess cannot start a <c>.cmd</c> or <c>.bat</c> directly, so
+    /// callers must run these through <c>cmd.exe /c</c>. Both provider CLIs are
+    /// commonly installed by npm, which means this is the normal case on
+    /// Windows rather than an edge one.
+    /// </remarks>
+    public static bool IsBatchScript(string? path) =>
+        path is not null &&
+        (path.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) ||
+         path.EndsWith(".bat", StringComparison.OrdinalIgnoreCase));
 }
