@@ -87,38 +87,133 @@
     </Setter>
   </Style>
 
-  <!-- A slim scrollbar that stays out of the way of a narrow popover. -->
-  <Style x:Key="SlimScrollBar" TargetType="ScrollBar">
-    <Setter Property="Width" Value="8" />
-    <Setter Property="Background" Value="Transparent" />
+  <!--
+    Scrollbars. The stock WPF scrollbar is the Aero one: wide, light, with
+    stepper buttons at each end. On a dark surface it reads as a piece of
+    another application that wandered in, which is exactly how it looked in the
+    settings window.
+
+    This one has no steppers, a transparent track and a rounded thumb that
+    thickens and brightens under the pointer - the behaviour Windows itself now
+    uses. Both orientations are templated, so it can be the implicit style for
+    the whole app rather than something scoped to one window.
+  -->
+  <Style x:Key="ScrollBarThumb" TargetType="Thumb">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="MinWidth" Value="26" />
     <Setter Property="Template">
       <Setter.Value>
-        <ControlTemplate TargetType="ScrollBar">
-          <Grid Background="Transparent">
-            <Track x:Name="PART_Track" IsDirectionReversed="True">
-              <Track.Thumb>
-                <Thumb>
-                  <Thumb.Template>
-                    <ControlTemplate TargetType="Thumb">
-                      <Border Background="{DynamicResource TextMutedBrush}"
-                              CornerRadius="4"
-                              Opacity="0.45"
-                              Margin="2,0" />
-                    </ControlTemplate>
-                  </Thumb.Template>
-                </Thumb>
-              </Track.Thumb>
-              <Track.IncreaseRepeatButton>
-                <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" />
-              </Track.IncreaseRepeatButton>
-              <Track.DecreaseRepeatButton>
-                <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" />
-              </Track.DecreaseRepeatButton>
-            </Track>
-          </Grid>
+        <ControlTemplate TargetType="Thumb">
+          <Border x:Name="Bar"
+                  Background="{DynamicResource TextMutedBrush}"
+                  CornerRadius="3"
+                  Opacity="0.42"
+                  Margin="4,2"
+                  SnapsToDevicePixels="True" />
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Bar" Property="Opacity" Value="0.72" />
+              <Setter TargetName="Bar" Property="Margin" Value="3,2" />
+            </Trigger>
+            <Trigger Property="IsDragging" Value="True">
+              <Setter TargetName="Bar" Property="Opacity" Value="0.9" />
+              <Setter TargetName="Bar" Property="Margin" Value="3,2" />
+            </Trigger>
+          </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
     </Setter>
+  </Style>
+
+  <Style x:Key="ScrollBarThumbHorizontal" TargetType="Thumb" BasedOn="{StaticResource ScrollBarThumb}">
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Thumb">
+          <Border x:Name="Bar"
+                  Background="{DynamicResource TextMutedBrush}"
+                  CornerRadius="3"
+                  Opacity="0.42"
+                  Margin="2,4"
+                  SnapsToDevicePixels="True" />
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Bar" Property="Opacity" Value="0.72" />
+              <Setter TargetName="Bar" Property="Margin" Value="2,3" />
+            </Trigger>
+            <Trigger Property="IsDragging" Value="True">
+              <Setter TargetName="Bar" Property="Opacity" Value="0.9" />
+              <Setter TargetName="Bar" Property="Margin" Value="2,3" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- The page-up / page-down regions: invisible, but they must still be hit-testable. -->
+  <Style x:Key="ScrollBarPageButton" TargetType="RepeatButton">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RepeatButton">
+          <Border Background="Transparent" />
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <ControlTemplate x:Key="VerticalScrollBarTemplate" TargetType="ScrollBar">
+    <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+      <Track x:Name="PART_Track" IsDirectionReversed="True">
+        <Track.DecreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageUpCommand" />
+        </Track.DecreaseRepeatButton>
+        <Track.Thumb>
+          <Thumb Style="{StaticResource ScrollBarThumb}" />
+        </Track.Thumb>
+        <Track.IncreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageDownCommand" />
+        </Track.IncreaseRepeatButton>
+      </Track>
+    </Grid>
+  </ControlTemplate>
+
+  <ControlTemplate x:Key="HorizontalScrollBarTemplate" TargetType="ScrollBar">
+    <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+      <Track x:Name="PART_Track">
+        <Track.DecreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageLeftCommand" />
+        </Track.DecreaseRepeatButton>
+        <Track.Thumb>
+          <Thumb Style="{StaticResource ScrollBarThumbHorizontal}" />
+        </Track.Thumb>
+        <Track.IncreaseRepeatButton>
+          <RepeatButton Style="{StaticResource ScrollBarPageButton}" Command="ScrollBar.PageRightCommand" />
+        </Track.IncreaseRepeatButton>
+      </Track>
+    </Grid>
+  </ControlTemplate>
+
+  <Style TargetType="ScrollBar">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Width" Value="12" />
+    <Setter Property="MinWidth" Value="12" />
+    <Setter Property="Template" Value="{StaticResource VerticalScrollBarTemplate}" />
+    <Style.Triggers>
+      <Trigger Property="Orientation" Value="Horizontal">
+        <Setter Property="Width" Value="Auto" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="MinHeight" Value="12" />
+        <Setter Property="Template" Value="{StaticResource HorizontalScrollBarTemplate}" />
+      </Trigger>
+    </Style.Triggers>
   </Style>
 
   <Style x:Key="DeckScrollViewer" TargetType="ScrollViewer">

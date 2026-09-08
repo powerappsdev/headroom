@@ -19,15 +19,6 @@
         Background="{DynamicResource SurfaceBrush}"
         FontFamily="{StaticResource UiFont}">
 
-  <Window.Resources>
-    <!--
-      Scoped to the deck rather than made app-wide: this template only handles a
-      vertical bar, and the deck is the one place where horizontal scrolling is
-      disabled outright.
-    -->
-    <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
-  </Window.Resources>
-
   <shell:WindowChrome.WindowChrome>
     <!-- No caption, no resize grip: the deck is a popover, not a window. -->
     <shell:WindowChrome CaptionHeight="0"
