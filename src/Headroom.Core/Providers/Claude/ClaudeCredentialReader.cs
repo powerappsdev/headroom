@@ -16,6 +16,13 @@ public enum CredentialStatus
     Unreadable,
     NoToken,
     Expired,
+
+    /// <summary>
+    /// The CLI has blanked its own tokens because the refresh token's lifetime
+    /// ran out. Nothing short of a fresh sign-in brings this back, so it must
+    /// not be presented as something that renews itself.
+    /// </summary>
+    SessionExpired,
 }
 
 /// <summary>
@@ -27,7 +34,8 @@ public sealed record ClaudeCredential(
     CredentialStatus Status,
     string? AccessToken,
     DateTimeOffset? ExpiresAt,
-    string? Identity)
+    string? Identity,
+    DateTimeOffset? RefreshTokenExpiresAt = null)
 {
     public bool IsUsable => Status == CredentialStatus.Ok && !string.IsNullOrEmpty(AccessToken);
 
@@ -44,7 +52,13 @@ public sealed record ClaudeCredential(
     {
         CredentialStatus.ProfileMissing => "This profile folder does not exist yet.",
         CredentialStatus.FileMissing => "No stored sign-in. Run claude /login for this profile.",
-        CredentialStatus.NoToken => "The stored sign-in has no access token. Sign in again.",
+        CredentialStatus.NoToken =>
+            "The stored sign-in has no access token. Run claude once in a terminal to renew it.",
+
+        CredentialStatus.SessionExpired => RefreshTokenExpiresAt is { } expiry
+            ? $"The CLI sign-in expired on {expiry.ToLocalTime():ddd d MMM, h:mm tt}. "
+              + "Run claude and use /login to sign in again."
+            : "The CLI sign-in has expired. Run claude and use /login to sign in again.",
         // Naming the action matters: an account that is only ever used through
         // the desktop app can sit with an expired CLI token indefinitely, and
         // "renews on next use" alone leaves someone waiting for something that
@@ -125,21 +139,39 @@ public sealed class ClaudeCredentialReader
             }
 
             var identity = ReadIdentity(root);
+            var refreshExpiry = ReadTimestamp(oauth, "refreshTokenExpiresAt", "refresh_token_expires_at");
+
+            // The CLI blanks accessToken and refreshToken to empty strings (and
+            // zeroes expiresAt) once the refresh token's own lifetime runs out.
+            // The file is still perfectly valid JSON, so "no token" is a real
+            // state to report rather than a parse failure - and when the refresh
+            // window is demonstrably over, this is a genuine sign-out that no
+            // amount of waiting will fix.
             var token = JsonReadHelpers.StringAny(oauth, "accessToken", "access_token");
             if (string.IsNullOrEmpty(token))
-                return new ClaudeCredential(CredentialStatus.NoToken, null, null, identity);
+            {
+                var status = refreshExpiry is { } refreshedUntil && refreshedUntil <= now
+                    ? CredentialStatus.SessionExpired
+                    : CredentialStatus.NoToken;
+
+                return new ClaudeCredential(status, null, null, identity, refreshExpiry);
+            }
 
             var expiresAt = ReadExpiry(oauth);
             if (expiresAt is { } expiry && expiry <= now)
-                return new ClaudeCredential(CredentialStatus.Expired, null, expiry, identity);
+                return new ClaudeCredential(CredentialStatus.Expired, null, expiry, identity, refreshExpiry);
 
-            return new ClaudeCredential(CredentialStatus.Ok, token, expiresAt, identity);
+            return new ClaudeCredential(CredentialStatus.Ok, token, expiresAt, identity, refreshExpiry);
         }
     }
 
-    private static DateTimeOffset? ReadExpiry(JsonElement oauth)
+    private static DateTimeOffset? ReadExpiry(JsonElement oauth) =>
+        ReadTimestamp(oauth, "expiresAt", "expires_at");
+
+    private static DateTimeOffset? ReadTimestamp(JsonElement oauth, params string[] names)
     {
-        if (JsonReadHelpers.NumberAny(oauth, "expiresAt", "expires_at") is not { } raw || raw <= 0) return null;
+        // A zeroed timestamp means "cleared", not 1970.
+        if (JsonReadHelpers.NumberAny(oauth, names) is not { } raw || raw <= 0) return null;
         try
         {
             return raw < 10_000_000_000d

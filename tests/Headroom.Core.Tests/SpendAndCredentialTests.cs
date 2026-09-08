@@ -161,6 +161,53 @@ public static class CredentialTests
         Check.Equal(CredentialStatus.Ok, credential.Status);
     }
 
+    [Test("The CLI blanks its own tokens when the refresh window closes - that is a real sign-out")]
+    public static void BlankedTokensWithAnExpiredRefreshWindowAreASignOut()
+    {
+        // Byte-for-byte the shape a real Claude Code install leaves behind once
+        // the refresh token's lifetime has run out.
+        var credential = ClaudeCredentialReader.ParseCredentialJson("""
+        { "claudeAiOauth": {
+            "accessToken": "",
+            "refreshToken": "",
+            "expiresAt": 0,
+            "refreshTokenExpiresAt": 1788581480130,
+            "scopes": ["a","b","c","d","e"],
+            "subscriptionType": "max",
+            "rateLimitTier": "default_claude_ai" } }
+        """, Now);
+
+        Check.Equal(CredentialStatus.SessionExpired, credential.Status);
+        Check.Equal(AccountAvailability.SignedOut, credential.ToAvailability());
+        Check.False(credential.IsUsable);
+        Check.Contains("/login", credential.Explain(), "a real sign-out must name the command that fixes it");
+        Check.Contains("expired on", credential.Explain());
+    }
+
+    [Test("A blank token while the refresh window is still open is renewable, not a sign-out")]
+    public static void BlankedTokenWithLiveRefreshWindowIsRenewable()
+    {
+        var credential = ClaudeCredentialReader.ParseCredentialJson("""
+        { "claudeAiOauth": { "accessToken": "", "expiresAt": 0, "refreshTokenExpiresAt": 4102444800000 } }
+        """, Now);
+
+        Check.Equal(CredentialStatus.NoToken, credential.Status);
+        Check.Contains("Run claude once", credential.Explain());
+        Check.False(credential.Explain()!.Contains("/login", StringComparison.Ordinal),
+            "do not send someone to a full sign-in when a renew would do");
+    }
+
+    [Test("A zeroed timestamp means cleared, not 1970")]
+    public static void ZeroedExpiryIsNotTreatedAsADate()
+    {
+        var credential = ClaudeCredentialReader.ParseCredentialJson("""
+        { "claudeAiOauth": { "accessToken": "tok", "expiresAt": 0 } }
+        """, Now);
+
+        Check.Equal(CredentialStatus.Ok, credential.Status);
+        Check.Null(credential.ExpiresAt);
+    }
+
     [Test]
     public static void MissingTokenIsSignedOut()
     {
