@@ -248,6 +248,64 @@ public static class BackoffTests
     }
 }
 
+public static class TrayBadgeTests
+{
+    [Test("Alert badges must clear 4.5:1, because the taskbar's own background is not ours to set")]
+    public static void AlertBadgesAreLegible()
+    {
+        foreach (var band in new[] { AlertBand.Warning, AlertBand.Critical })
+        {
+            foreach (var lightTaskbar in new[] { true, false })
+            {
+                var style = TrayBadge.For(band, lightTaskbar);
+                var contrast = Rgb.Contrast(style.Fill, style.Ink);
+
+                Check.True(style.Filled, $"{band} must paint its own background");
+                Check.True(
+                    contrast >= TrayBadge.MinimumContrast,
+                    $"{band} on a {(lightTaskbar ? "light" : "dark")} taskbar: ink/badge contrast is {contrast:0.00}, needs {TrayBadge.MinimumContrast}");
+            }
+        }
+    }
+
+    [Test("A filled badge looks the same whatever the taskbar is doing - that is the point")]
+    public static void AlertBadgesDoNotDependOnTheTaskbar()
+    {
+        foreach (var band in new[] { AlertBand.Warning, AlertBand.Critical })
+            Check.Equal(TrayBadge.For(band, true), TrayBadge.For(band, false));
+    }
+
+    [Test("Healthy paints no badge and follows the taskbar's ink")]
+    public static void HealthyIsUnfilledAndFollowsTheTaskbar()
+    {
+        var onDark = TrayBadge.For(AlertBand.Healthy, lightTaskbar: false);
+        var onLight = TrayBadge.For(AlertBand.Healthy, lightTaskbar: true);
+
+        Check.False(onDark.Filled);
+        Check.False(onLight.Filled);
+        Check.True(onDark.Ink.RelativeLuminance > onLight.Ink.RelativeLuminance,
+            "a dark taskbar needs light ink and vice versa");
+    }
+
+    [Test("The old approach really was failing - kept as the reason this exists")]
+    public static void BareRedOnADarkTaskbarWouldNotHavePassed()
+    {
+        var bareRed = Rgb.FromHex(0xD03B3B);
+        var darkTaskbar = Rgb.FromHex(0x1C1C1C);
+
+        Check.True(
+            Rgb.Contrast(bareRed, darkTaskbar) < TrayBadge.MinimumContrast,
+            "if this ever passes, the badge may no longer be necessary");
+    }
+
+    [Test]
+    public static void ContrastMathMatchesKnownValues()
+    {
+        Check.Close(21d, Rgb.Contrast(Rgb.FromHex(0xFFFFFF), Rgb.FromHex(0x000000)), 0.01d);
+        Check.Close(1d, Rgb.Contrast(Rgb.FromHex(0x808080), Rgb.FromHex(0x808080)), 0.001d);
+    }
+}
+
 public static class DeckTests
 {
     [Test]

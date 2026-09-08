@@ -2,9 +2,11 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Headroom.App.ViewModels;
+using Headroom.Core.Model;
 
 namespace Headroom.App.Tray;
 
@@ -25,10 +27,6 @@ public static class TrayIconRenderer
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool DestroyIcon(IntPtr handle);
-
-    private static readonly Color Healthy = Color.FromArgb(0x39, 0x87, 0xE5);
-    private static readonly Color Warning = Color.FromArgb(0xFA, 0xB2, 0x19);
-    private static readonly Color Critical = Color.FromArgb(0xD0, 0x3B, 0x3B);
 
     /// <summary>
     /// An icon together with the unmanaged handle it was built from.
@@ -137,52 +135,96 @@ public static class TrayIconRenderer
         }
     }
 
-    /// <summary>The alert state: the number is the icon.</summary>
+    /// <summary>
+    /// The alert state: the number is the icon, on a badge of its own.
+    /// </summary>
+    /// <remarks>
+    /// Two things make this legible at sixteen pixels where the previous
+    /// version was not. The digits are built as a glyph path and scaled to fill
+    /// the space, rather than drawn at a guessed point size and left to land
+    /// wherever the font's internal leading puts them. And an alerting icon
+    /// paints its own background, so the contrast is one this app sets rather
+    /// than one it inherits from whatever the taskbar happens to be.
+    /// </remarks>
     private static void DrawPercent(Graphics g, int size, double remaining, MeterTone tone, bool lightBackground)
     {
-        var color = tone switch
-        {
-            MeterTone.Critical => Critical,
-            MeterTone.Warning => Warning,
-            _ => lightBackground ? Color.FromArgb(0x1F, 0x1F, 0x1D) : Color.White,
-        };
+        var style = TrayBadge.For(BandFor(tone), lightBackground);
+        var ink = ToColor(style.Ink);
 
-        // 100 will not fit legibly in a tray square, and "full" is not news anyway.
+        // 100 does not fit legibly in a tray square, and "full" is not news.
         var value = (int)Math.Round(Math.Clamp(remaining, 0d, 99d), MidpointRounding.AwayFromZero);
-        var text = value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var text = value.ToString(CultureInfo.InvariantCulture);
 
-        var barHeight = Math.Max(1.5f, size * 0.11f);
-        var textArea = new RectangleF(0, 0, size, size - barHeight - 1f);
-
-        var fontSize = size * (text.Length >= 2 ? 0.62f : 0.78f);
-        using var font = new Font("Segoe UI", fontSize, FontStyle.Bold, GraphicsUnit.Pixel);
-        using var brush = new SolidBrush(color);
-        using var format = new StringFormat
+        RectangleF target;
+        if (style.Filled)
         {
-            Alignment = StringAlignment.Center,
-            LineAlignment = StringAlignment.Center,
-            FormatFlags = StringFormatFlags.NoWrap,
-        };
+            using var badge = new SolidBrush(ToColor(style.Fill));
+            var plate = new RectangleF(0f, 0f, size, size);
+            FillRounded(g, badge, plate, size * 0.26f);
 
-        g.DrawString(text, font, brush, textArea, format);
+            // Inset so the digits sit inside the badge rather than against its
+            // edge. Two digits need the horizontal room more than one does.
+            var padX = text.Length >= 2 ? size * 0.10f : size * 0.24f;
+            var padY = size * 0.16f;
+            target = RectangleF.Inflate(plate, -padX, -padY);
+        }
+        else
+        {
+            var padX = text.Length >= 2 ? size * 0.04f : size * 0.20f;
+            target = RectangleF.Inflate(new RectangleF(0f, 0f, size, size), -padX, -size * 0.10f);
+        }
 
-        // A thin fraction bar under the number: redundant with the digits on
-        // purpose, so the state still reads at a glance without being parsed.
-        var trackColor = lightBackground
-            ? Color.FromArgb(60, 0, 0, 0)
-            : Color.FromArgb(70, 255, 255, 255);
+        DrawFittedDigits(g, text, ink, target);
+    }
 
-        using var track = new SolidBrush(trackColor);
-        using var fill = new SolidBrush(color);
+    private static AlertBand BandFor(MeterTone tone) => tone switch
+    {
+        MeterTone.Critical => AlertBand.Critical,
+        MeterTone.Warning => AlertBand.Warning,
+        _ => AlertBand.Healthy,
+    };
 
-        var trackRect = new RectangleF(1f, size - barHeight - 0.5f, size - 2f, barHeight);
-        var radius = barHeight / 2f;
-        FillRounded(g, track, trackRect, radius);
+    private static Color ToColor(Rgb value) => Color.FromArgb(value.R, value.G, value.B);
 
-        var fraction = (float)Math.Clamp(remaining / 100d, 0d, 1d);
-        var fillWidth = trackRect.Width * fraction;
-        if (fillWidth > 0.5f)
-            FillRounded(g, fill, new RectangleF(trackRect.X, trackRect.Y, Math.Max(fillWidth, barHeight), barHeight), radius);
+    /// <summary>
+    /// Renders text as a filled glyph path scaled to fill <paramref name="target"/>.
+    /// </summary>
+    /// <remarks>
+    /// Graphics.DrawString positions by the font's line box, which at this size
+    /// wastes most of the icon on ascent and descent the digits never use. Going
+    /// through a path lets the actual ink bounds be measured and scaled, so "9"
+    /// and "91" both fill the space they are given.
+    /// </remarks>
+    private static void DrawFittedDigits(Graphics g, string text, Color ink, RectangleF target)
+    {
+        if (string.IsNullOrEmpty(text) || target.Width <= 0f || target.Height <= 0f) return;
+
+        using var family = new FontFamily("Segoe UI");
+        using var path = new GraphicsPath();
+
+        // A large em size keeps the outline smooth; it is scaled down below.
+        path.AddString(
+            text,
+            family,
+            (int)FontStyle.Bold,
+            100f,
+            new PointF(0f, 0f),
+            StringFormat.GenericTypographic);
+
+        var bounds = path.GetBounds();
+        if (bounds.Width <= 0f || bounds.Height <= 0f) return;
+
+        var scale = Math.Min(target.Width / bounds.Width, target.Height / bounds.Height);
+
+        using var transform = new Matrix();
+        transform.Translate(
+            target.X + ((target.Width - (bounds.Width * scale)) / 2f) - (bounds.X * scale),
+            target.Y + ((target.Height - (bounds.Height * scale)) / 2f) - (bounds.Y * scale));
+        transform.Scale(scale, scale);
+        path.Transform(transform);
+
+        using var brush = new SolidBrush(ink);
+        g.FillPath(brush, path);
     }
 
     private static void FillRounded(Graphics g, Brush brush, RectangleF rect, float radius)
