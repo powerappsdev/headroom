@@ -35,7 +35,8 @@ public sealed record ClaudeCredential(
     string? AccessToken,
     DateTimeOffset? ExpiresAt,
     string? Identity,
-    DateTimeOffset? RefreshTokenExpiresAt = null)
+    DateTimeOffset? RefreshTokenExpiresAt = null,
+    string? SubscriptionType = null)
 {
     public bool IsUsable => Status == CredentialStatus.Ok && !string.IsNullOrEmpty(AccessToken);
 
@@ -141,6 +142,10 @@ public sealed class ClaudeCredentialReader
             var identity = ReadIdentity(root);
             var refreshExpiry = ReadTimestamp(oauth, "refreshTokenExpiresAt", "refresh_token_expires_at");
 
+            // Display metadata the CLI already recorded. Not a secret, and the
+            // only place a plan name is available before a probe succeeds.
+            var subscription = JsonReadHelpers.StringAny(oauth, "subscriptionType", "subscription_type");
+
             // The CLI blanks accessToken and refreshToken to empty strings (and
             // zeroes expiresAt) once the refresh token's own lifetime runs out.
             // The file is still perfectly valid JSON, so "no token" is a real
@@ -154,14 +159,14 @@ public sealed class ClaudeCredentialReader
                     ? CredentialStatus.SessionExpired
                     : CredentialStatus.NoToken;
 
-                return new ClaudeCredential(status, null, null, identity, refreshExpiry);
+                return new ClaudeCredential(status, null, null, identity, refreshExpiry, subscription);
             }
 
             var expiresAt = ReadExpiry(oauth);
             if (expiresAt is { } expiry && expiry <= now)
-                return new ClaudeCredential(CredentialStatus.Expired, null, expiry, identity, refreshExpiry);
+                return new ClaudeCredential(CredentialStatus.Expired, null, expiry, identity, refreshExpiry, subscription);
 
-            return new ClaudeCredential(CredentialStatus.Ok, token, expiresAt, identity, refreshExpiry);
+            return new ClaudeCredential(CredentialStatus.Ok, token, expiresAt, identity, refreshExpiry, subscription);
         }
     }
 

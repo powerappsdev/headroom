@@ -106,6 +106,7 @@ public static class ClaudeUsageParser
 
         var unique = DeduplicateByScope(windows);
         AttachSpend(root, usage, unique);
+        DropMeaninglessSpend(unique);
         return unique;
     }
 
@@ -226,7 +227,9 @@ public static class ClaudeUsageParser
                 return $"{Capitalize(normalized[..^marker.Length])} weekly";
         }
 
-        return raw.Replace('_', ' ');
+        // A window the provider names but Headroom has no pattern for still
+        // deserves to render properly: whatever it said, tidied, never dropped.
+        return Capitalize(raw);
     }
 
     private static WindowKind KindForLabel(string label, string? kindHint = null)
@@ -261,6 +264,22 @@ public static class ClaudeUsageParser
         if (trimmed.Length == 0) return trimmed;
         return char.ToUpper(trimmed[0], CultureInfo.InvariantCulture) + trimmed[1..];
     }
+
+    /// <summary>
+    /// Removes a spend row that carries neither money nor usage.
+    /// </summary>
+    /// <remarks>
+    /// An extra-usage budget you have not touched reports 0% with no amounts,
+    /// which renders as a full bar reading "100% left" next to the rate limits
+    /// that actually constrain you. That is noise dressed as data. A budget with
+    /// stated amounts is kept even at zero, because "$0.00 of $500.00" is
+    /// genuinely information.
+    /// </remarks>
+    private static void DropMeaninglessSpend(List<UsageWindow> windows) =>
+        windows.RemoveAll(w =>
+            w.Kind == WindowKind.Spend &&
+            w.Spend is null &&
+            w.UsedPercent is null or 0d);
 
     private static void AttachSpend(JsonElement root, JsonElement usage, List<UsageWindow> windows)
     {

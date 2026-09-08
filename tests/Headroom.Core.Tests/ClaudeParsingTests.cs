@@ -156,6 +156,39 @@ public static class ClaudeParsingTests
         Check.Equal("Some-future-model weekly", windows[0].Scope);
     }
 
+    [Test("A window Headroom has no pattern for is still rendered, tidied rather than dropped")]
+    public static void RendersUnrecognisedWindowNames()
+    {
+        // Seen in a live payload: a model-scoped cap keyed by its own name.
+        var windows = ClaudeUsageParser.Parse("""{"nimbus_quill":{"utilization":0}}""");
+
+        Check.Count(1, windows);
+        Check.Equal("Nimbus quill", windows[0].Scope);
+    }
+
+    [Test("An untouched spend budget with no stated amounts is noise, not data")]
+    public static void DropsMeaninglessSpendRow()
+    {
+        var windows = ClaudeUsageParser.Parse("""
+        { "five_hour": { "utilization": 91 }, "spend": { "utilization": 0 } }
+        """);
+
+        Check.Count(1, windows);
+        Check.Equal("5-hour", windows[0].Scope);
+    }
+
+    [Test("A spend budget that states amounts is kept even at zero")]
+    public static void KeepsSpendWithStatedAmounts()
+    {
+        var windows = ClaudeUsageParser.Parse("""
+        { "five_hour": { "utilization": 10 },
+          "extra_usage": { "is_enabled": true, "used_credits": 0, "monthly_limit": 50000, "currency": "USD" } }
+        """);
+
+        Check.Count(2, windows);
+        Check.NotNull(windows.First(w => w.Kind == WindowKind.Spend).Spend);
+    }
+
     private static UsageWindow Find(System.Collections.Generic.IReadOnlyList<UsageWindow> windows, string scope) =>
         Check.NotNull(
             windows.FirstOrDefault(w => string.Equals(w.Scope, scope, StringComparison.OrdinalIgnoreCase)),

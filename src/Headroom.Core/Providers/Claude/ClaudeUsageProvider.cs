@@ -81,7 +81,12 @@ public sealed class ClaudeUsageProvider : IUsageProvider
         using (response)
         {
             var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            return Interpret(response.StatusCode, response.Headers.RetryAfter?.Delta, body, credential.Identity);
+            return Interpret(
+                response.StatusCode,
+                response.Headers.RetryAfter?.Delta,
+                body,
+                credential.Identity,
+                credential.SubscriptionType);
         }
     }
 
@@ -90,7 +95,11 @@ public sealed class ClaudeUsageProvider : IUsageProvider
     /// covered by tests without a network.
     /// </summary>
     internal static ProbeResult Interpret(
-        HttpStatusCode status, TimeSpan? retryAfter, string body, string? identity)
+        HttpStatusCode status,
+        TimeSpan? retryAfter,
+        string body,
+        string? identity,
+        string? subscriptionType = null)
     {
         if (status == HttpStatusCode.TooManyRequests)
         {
@@ -139,7 +148,7 @@ public sealed class ClaudeUsageProvider : IUsageProvider
                 transient: true);
         }
 
-        return ProbeResult.Success(windows, identity, ReadPlanTier(body));
+        return ProbeResult.Success(windows, identity, ReadPlanTier(body) ?? subscriptionType);
     }
 
     private static bool IsAuthenticationError(string body)
