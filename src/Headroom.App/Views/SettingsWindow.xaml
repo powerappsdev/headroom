@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:Headroom.App.ViewModels"
         Title="Headroom Settings"
-        Width="600"
-        Height="660"
-        MinWidth="520"
+        Width="620"
+        Height="700"
+        MinWidth="540"
         MinHeight="480"
         WindowStartupLocation="CenterScreen"
         UseLayoutRounding="True"
@@ -18,206 +18,216 @@
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="22,20,22,10">
+    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="22,20,22,4">
       <StackPanel>
 
-        <!-- Accounts -->
-        <TextBlock Text="ACCOUNTS" Style="{StaticResource SectionHeader}" />
-        <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" Margin="0,0,0,12" LineHeight="16"
-                   Text="Each account points at a profile folder the CLI already owns. Headroom only reads from these folders — it never writes a credential, never signs you in, and never signs you out." />
+        <!-- ======================= Accounts ======================= -->
+        <TextBlock Text="Accounts" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionPanel}">
+          <StackPanel>
+            <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" Margin="0,0,0,14" LineHeight="16"
+                       Text="Each account points at a profile folder the CLI already owns. Headroom only reads from these folders — it never writes a credential, never signs you in, and never signs you out." />
 
-        <ItemsControl ItemsSource="{Binding Accounts}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate DataType="{x:Type vm:AccountEditViewModel}">
-              <Border Background="{DynamicResource SurfaceElevatedBrush}"
-                      BorderBrush="{DynamicResource HairlineBrush}"
-                      BorderThickness="1"
-                      CornerRadius="8"
-                      Padding="12"
-                      Margin="0,0,0,8">
-                <Grid>
-                  <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                  </Grid.RowDefinitions>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                  </Grid.ColumnDefinitions>
+            <ItemsControl ItemsSource="{Binding Accounts}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:AccountEditViewModel}">
+                  <Border Style="{StaticResource NestedCard}">
+                    <Grid>
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                      </Grid.RowDefinitions>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
 
-                  <TextBox Grid.Row="0" Grid.Column="0"
-                           Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"
-                           MinHeight="28"
-                           VerticalContentAlignment="Center"
-                           ToolTip="Display name" />
+                      <TextBox Grid.Row="0" Grid.Column="0"
+                               Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}"
+                               MinHeight="28"
+                               VerticalContentAlignment="Center"
+                               ToolTip="Display name" />
 
-                  <ComboBox Grid.Row="0" Grid.Column="1"
-                            Width="104"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Stretch"
-                            SelectedIndex="{Binding Provider, Mode=TwoWay, Converter={StaticResource ProviderIndex}}">
-                    <ComboBoxItem Content="Claude" />
-                    <ComboBoxItem Content="Codex" />
-                  </ComboBox>
+                      <ComboBox Grid.Row="0" Grid.Column="1"
+                                Width="104"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Stretch"
+                                SelectedIndex="{Binding Provider, Mode=TwoWay, Converter={StaticResource ProviderIndex}}">
+                        <ComboBoxItem Content="Claude" />
+                        <ComboBoxItem Content="Codex" />
+                      </ComboBox>
 
-                  <CheckBox Grid.Row="0" Grid.Column="2"
-                            Content="On"
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center"
-                            Foreground="{DynamicResource TextSecondaryBrush}"
-                            IsChecked="{Binding Enabled}"
-                            ToolTip="Uncheck to keep the account but stop polling it" />
+                      <CheckBox Grid.Row="0" Grid.Column="2"
+                                Content="On"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                IsChecked="{Binding Enabled}"
+                                ToolTip="Uncheck to keep the account but stop polling it" />
 
-                  <Button Grid.Row="0" Grid.Column="3"
-                          Style="{StaticResource GhostButton}"
-                          Content="Remove"
-                          Margin="6,0,0,0"
-                          Click="OnRemoveAccountClick"
-                          Tag="{Binding}" />
+                      <Button Grid.Row="0" Grid.Column="3"
+                              Style="{StaticResource GhostButton}"
+                              Content="Remove"
+                              Margin="6,0,0,0"
+                              Click="OnRemoveAccountClick"
+                              Tag="{Binding}" />
 
-                  <Grid Grid.Row="1" Grid.ColumnSpan="4" Margin="0,8,0,0">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0"
-                             Text="{Binding ProfileDirectory, UpdateSourceTrigger=PropertyChanged}"
-                             MinHeight="28"
-                             FontSize="{StaticResource FontSizeCaption}"
-                             VerticalContentAlignment="Center"
-                             ToolTip="CLAUDE_CONFIG_DIR or CODEX_HOME for this account" />
-                    <Button Grid.Column="1"
-                            Style="{StaticResource GhostButton}"
-                            Content="Browse…"
-                            Margin="6,0,0,0"
-                            Click="OnBrowseClick"
-                            Tag="{Binding}" />
-                  </Grid>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                      <Grid Grid.Row="1" Grid.ColumnSpan="4" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding ProfileDirectory, UpdateSourceTrigger=PropertyChanged}"
+                                 MinHeight="28"
+                                 FontSize="{StaticResource FontSizeCaption}"
+                                 VerticalContentAlignment="Center"
+                                 ToolTip="CLAUDE_CONFIG_DIR or CODEX_HOME for this account" />
+                        <Button Grid.Column="1"
+                                Style="{StaticResource GhostButton}"
+                                Content="Browse…"
+                                Margin="6,0,0,0"
+                                Click="OnBrowseClick"
+                                Tag="{Binding}" />
+                      </Grid>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
-        <StackPanel Orientation="Horizontal" Margin="0,2,0,22">
-          <Button Style="{StaticResource GhostButton}" Content="+ Claude account" Click="OnAddClaudeClick" />
-          <Button Style="{StaticResource GhostButton}" Content="+ Codex account" Click="OnAddCodexClick" Margin="6,0,0,0" />
-          <Button Style="{StaticResource GhostButton}" Content="Find existing profiles" Click="OnDiscoverClick" Margin="6,0,0,0" />
-        </StackPanel>
-
-        <!-- Refresh -->
-        <Border Style="{StaticResource SectionRule}" />
-        <TextBlock Text="REFRESH" Style="{StaticResource SectionHeader}" />
-        <CheckBox Content="Refresh automatically"
-                  IsChecked="{Binding AutoRefresh}"
-                  Foreground="{DynamicResource TextPrimaryBrush}"
-                  Margin="0,0,0,10" />
-
-        <TextBlock Text="How often" Style="{StaticResource FieldLabel}" />
-        <ComboBox Width="200"
-                  HorizontalAlignment="Left"
-                  Margin="0,0,0,8"
-                  ItemsSource="{Binding IntervalChoices}"
-                  SelectedItem="{Binding RefreshIntervalSeconds}">
-          <ComboBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding Converter={StaticResource IntervalLabel}}" />
-            </DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
-        <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" Margin="0,0,0,22" LineHeight="16"
-                   Text="Opening the deck also refreshes, and a failed poll backs off on its own — so a slower interval here costs you nothing in practice." />
-
-        <!-- Alerts -->
-        <Border Style="{StaticResource SectionRule}" />
-        <TextBlock Text="ALERTS" Style="{StaticResource SectionHeader}" />
-        <CheckBox Content="Notify me when an account crosses a threshold"
-                  IsChecked="{Binding NotificationsEnabled}"
-                  Foreground="{DynamicResource TextPrimaryBrush}"
-                  Margin="0,0,0,12" />
-
-        <Grid Margin="0,0,0,6">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
-
-          <StackPanel Grid.Column="0" Margin="0,0,12,0">
-            <TextBlock Style="{StaticResource FieldLabel}">
-              <Run Text="Warning below" /><Run Text=" " /><Run Text="{Binding WarningPercent, StringFormat={}{0:0}}" /><Run Text="%" />
-            </TextBlock>
-            <Slider Minimum="5" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
-                    Value="{Binding WarningPercent}" />
+            <StackPanel Orientation="Horizontal" Margin="-8,2,0,0">
+              <Button Style="{StaticResource GhostButton}" Content="+ Claude account" Click="OnAddClaudeClick" />
+              <Button Style="{StaticResource GhostButton}" Content="+ Codex account" Click="OnAddCodexClick" />
+              <Button Style="{StaticResource GhostButton}" Content="Find existing profiles" Click="OnDiscoverClick" />
+            </StackPanel>
           </StackPanel>
+        </Border>
 
-          <StackPanel Grid.Column="1">
-            <TextBlock Style="{StaticResource FieldLabel}">
-              <Run Text="Critical below" /><Run Text=" " /><Run Text="{Binding CriticalPercent, StringFormat={}{0:0}}" /><Run Text="%" />
-            </TextBlock>
-            <Slider Minimum="1" Maximum="30" TickFrequency="1" IsSnapToTickEnabled="True"
-                    Value="{Binding CriticalPercent}" />
+        <!-- ======================= Refresh ======================= -->
+        <TextBlock Text="Refresh" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionPanel}">
+          <StackPanel>
+            <CheckBox Content="Refresh automatically"
+                      IsChecked="{Binding AutoRefresh}"
+                      Margin="0,0,0,14" />
+
+            <TextBlock Text="How often" Style="{StaticResource FieldLabel}" />
+            <ComboBox Width="200"
+                      HorizontalAlignment="Left"
+                      Margin="0,0,0,10"
+                      ItemsSource="{Binding IntervalChoices}"
+                      SelectedItem="{Binding RefreshIntervalSeconds}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Converter={StaticResource IntervalLabel}}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" LineHeight="16"
+                       Text="Opening the deck also refreshes, and a failed poll backs off on its own — so a slower interval here costs you nothing in practice." />
           </StackPanel>
-        </Grid>
-        <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" Margin="0,0,0,22" LineHeight="16"
-                   Text="Notifications fire once, at the crossing — not every time a poll finds you still low." />
+        </Border>
 
-        <!-- Appearance -->
-        <Border Style="{StaticResource SectionRule}" />
-        <TextBlock Text="APPEARANCE" Style="{StaticResource SectionHeader}" />
+        <!-- ======================== Alerts ======================== -->
+        <TextBlock Text="Alerts" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionPanel}">
+          <StackPanel>
+            <CheckBox Content="Notify me when an account crosses a threshold"
+                      IsChecked="{Binding NotificationsEnabled}"
+                      Margin="0,0,0,16" />
 
-        <TextBlock Text="Theme" Style="{StaticResource FieldLabel}" />
-        <ComboBox Width="200" HorizontalAlignment="Left" Margin="0,0,0,14"
-                  ItemsSource="{Binding ThemeChoices}" SelectedItem="{Binding Theme}">
-          <ComboBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
-            </DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
+            <Grid Margin="0,0,0,10">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
 
-        <TextBlock Text="Sort accounts by" Style="{StaticResource FieldLabel}" />
-        <ComboBox Width="200" HorizontalAlignment="Left" Margin="0,0,0,14"
-                  ItemsSource="{Binding SortChoices}" SelectedItem="{Binding Sort}">
-          <ComboBox.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
-            </DataTemplate>
-          </ComboBox.ItemTemplate>
-        </ComboBox>
+              <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                <TextBlock Style="{StaticResource FieldLabel}">
+                  <Run Text="Warning below" /><Run Text=" " /><Run Text="{Binding WarningPercent, StringFormat={}{0:0}}" /><Run Text="%" />
+                </TextBlock>
+                <Slider Minimum="5" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
+                        Value="{Binding WarningPercent}" />
+              </StackPanel>
 
-        <CheckBox Content="Always show the percentage in the notification area"
-                  IsChecked="{Binding AlwaysShowPercent}"
-                  Foreground="{DynamicResource TextPrimaryBrush}"
-                  Margin="0,0,0,8"
-                  ToolTip="Off: the icon stays a quiet glyph until something drops below the warning threshold" />
+              <StackPanel Grid.Column="1" Margin="14,0,0,0">
+                <TextBlock Style="{StaticResource FieldLabel}">
+                  <Run Text="Critical below" /><Run Text=" " /><Run Text="{Binding CriticalPercent, StringFormat={}{0:0}}" /><Run Text="%" />
+                </TextBlock>
+                <Slider Minimum="1" Maximum="30" TickFrequency="1" IsSnapToTickEnabled="True"
+                        Value="{Binding CriticalPercent}" />
+              </StackPanel>
+            </Grid>
 
-        <CheckBox Content="Start Headroom when I sign in"
-                  IsChecked="{Binding LaunchAtLogin}"
-                  Foreground="{DynamicResource TextPrimaryBrush}"
-                  Margin="0,0,0,22" />
+            <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" LineHeight="16"
+                       Text="Notifications fire once, at the crossing — not every time a poll finds you still low." />
+          </StackPanel>
+        </Border>
 
-        <!-- Data -->
-        <Border Style="{StaticResource SectionRule}" />
-        <TextBlock Text="DATA" Style="{StaticResource SectionHeader}" />
-        <TextBlock Text="Keep history for (days)" Style="{StaticResource FieldLabel}" />
-        <TextBox Width="100" HorizontalAlignment="Left" MinHeight="28" Margin="0,0,0,12"
-                 VerticalContentAlignment="Center"
-                 Text="{Binding HistoryRetentionDays}" />
-        <TextBlock x:Name="DataPathText"
-                   Style="{StaticResource CaptionText}"
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,4" />
-        <Button Style="{StaticResource GhostButton}"
-                Content="Open data folder"
-                HorizontalAlignment="Left"
-                Margin="-8,0,0,20"
-                Click="OnOpenDataFolderClick" />
+        <!-- ====================== Appearance ====================== -->
+        <TextBlock Text="Appearance" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionPanel}">
+          <StackPanel>
+            <TextBlock Text="Theme" Style="{StaticResource FieldLabel}" />
+            <ComboBox Width="200" HorizontalAlignment="Left" Margin="0,0,0,14"
+                      ItemsSource="{Binding ThemeChoices}" SelectedItem="{Binding Theme}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock Text="Sort accounts by" Style="{StaticResource FieldLabel}" />
+            <ComboBox Width="200" HorizontalAlignment="Left" Margin="0,0,0,16"
+                      ItemsSource="{Binding SortChoices}" SelectedItem="{Binding Sort}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Converter={StaticResource EnumLabel}}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <CheckBox Content="Always show the percentage in the notification area"
+                      IsChecked="{Binding AlwaysShowPercent}"
+                      Margin="0,0,0,12"
+                      ToolTip="Off: the icon stays a quiet glyph until something drops below the warning threshold" />
+
+            <CheckBox Content="Start Headroom when I sign in"
+                      IsChecked="{Binding LaunchAtLogin}" />
+          </StackPanel>
+        </Border>
+
+        <!-- ========================= Data ========================= -->
+        <TextBlock Text="Data" Style="{StaticResource SectionHeader}" />
+        <Border Style="{StaticResource SectionPanel}">
+          <StackPanel>
+            <TextBlock Text="Keep history for (days)" Style="{StaticResource FieldLabel}" />
+            <TextBox Width="100" HorizontalAlignment="Left" MinHeight="28" Margin="0,0,0,14"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding HistoryRetentionDays}" />
+
+            <TextBlock x:Name="DataPathText"
+                       Style="{StaticResource CaptionText}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,6" />
+
+            <Button Style="{StaticResource GhostButton}"
+                    Content="Open data folder"
+                    HorizontalAlignment="Left"
+                    Margin="-8,0,0,0"
+                    Click="OnOpenDataFolderClick" />
+          </StackPanel>
+        </Border>
+
       </StackPanel>
     </ScrollViewer>
 
     <Border Grid.Row="1"
+            Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource HairlineBrush}"
             BorderThickness="0,1,0,0"
             Padding="22,12">

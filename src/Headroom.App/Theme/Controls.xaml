@@ -133,18 +133,42 @@
     <Setter Property="Margin" Value="0,0,0,4" />
   </Style>
 
+  <!--
+    Section grouping. A hairline between sections turned out not to be enough
+    separation on a long settings page - the eye still read one continuous
+    column. Each group now sits in its own panel with its heading above it,
+    which is the idiom Windows itself uses and makes the groups countable at a
+    glance rather than something you have to parse.
+  -->
   <Style x:Key="SectionHeader" TargetType="TextBlock" BasedOn="{StaticResource BaseText}">
-    <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}" />
+    <Setter Property="FontSize" Value="{StaticResource FontSizeTitle}" />
     <Setter Property="FontWeight" Value="SemiBold" />
-    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-    <Setter Property="Margin" Value="0,0,0,10" />
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Margin" Value="2,0,0,9" />
   </Style>
 
-  <!-- The hairline that opens each section. -->
-  <Style x:Key="SectionRule" TargetType="Border">
-    <Setter Property="Height" Value="1" />
-    <Setter Property="Background" Value="{DynamicResource HairlineBrush}" />
-    <Setter Property="Margin" Value="0,0,0,18" />
+  <Style x:Key="SectionPanel" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="16,15,16,16" />
+    <Setter Property="Margin" Value="0,0,0,26" />
+    <Setter Property="SnapsToDevicePixels" Value="True" />
+  </Style>
+
+  <!--
+    A card nested inside a section panel. It steps to the hover surface so the
+    nesting stays legible in both themes, where two adjacent elevated surfaces
+    would not read as separate.
+  -->
+  <Style x:Key="NestedCard" TargetType="Border">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource HairlineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="12" />
+    <Setter Property="Margin" Value="0,0,0,8" />
     <Setter Property="SnapsToDevicePixels" Value="True" />
   </Style>
 
