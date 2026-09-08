@@ -138,6 +138,14 @@ public static class TestRunner
         stopwatch.Stop();
         Console.WriteLine();
 
+        if (cases.Count == 0)
+        {
+            Console.WriteLine(filter is null
+                ? "No tests were discovered. That is a failure, not an empty pass."
+                : $"No tests matched the filter \"{filter}\". That is a failure, not an empty pass.");
+            return 1;
+        }
+
         foreach (var (name, error) in failures)
         {
             Console.WriteLine($"FAILED {name}");
@@ -157,6 +165,12 @@ public static class TestRunner
 
 public static class Program
 {
-    public static Task<int> Main(string[] args) =>
-        TestRunner.RunAsync(typeof(Program).Assembly, args.Length > 0 ? args[0] : null);
+    public static Task<int> Main(string[] args)
+    {
+        // `dotnet run` forwards options it does not recognise straight through to
+        // the app, so a stray --nologo would otherwise be taken as a name filter
+        // and silently match nothing.
+        var filter = Array.Find(args, a => !a.StartsWith('-'));
+        return TestRunner.RunAsync(typeof(Program).Assembly, filter);
+    }
 }

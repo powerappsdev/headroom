@@ -12,6 +12,10 @@ using Microsoft.Win32;
 
 namespace Headroom.App;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "A WPF Application's lifetime is owned by the framework, not by a caller holding a reference. Everything disposable here is released in OnExit, which is the framework's teardown hook.")]
 public partial class App : Application
 {
     private SingleInstance? _instance;
@@ -215,9 +219,10 @@ public partial class App : Application
             _history.Closed += (_, _) => _history = null;
         }
 
+        var accounts = _host.Deck.Accounts;
         var account = accountId is null
-            ? _host.Deck.Accounts.FirstOrDefault()
-            : _host.Deck.Accounts.FirstOrDefault(a =>
+            ? (accounts.Count > 0 ? accounts[0] : null)
+            : accounts.FirstOrDefault(a =>
                 string.Equals(a.AccountId, accountId, StringComparison.OrdinalIgnoreCase));
 
         _history.ShowForAccount(account, _theme?.IsDark ?? true);

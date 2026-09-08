@@ -51,6 +51,10 @@ public sealed class HistoryViewModel : ObservableObject
 
     public HistoryViewModel(UsageHistoryStore history) => _history = history;
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Performance",
+        "CA1822:Mark members as static",
+        Justification = "A XAML {Binding} resolves against the DataContext instance, so this cannot be static without breaking the range picker.")]
     public IReadOnlyList<HistoryRange> Ranges => HistoryRange.All;
 
     public ObservableCollection<HistorySeries> Series { get; } = new();

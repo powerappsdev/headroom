@@ -114,8 +114,9 @@ public sealed class HistoryChart : FrameworkElement
         InvalidateVisual();
     }
 
-    protected override void OnRender(DrawingContext dc)
+    protected override void OnRender(DrawingContext drawingContext)
     {
+        var dc = drawingContext;
         var series = Series?.Where(s => s.Points.Count > 0).ToList() ?? new List<HistorySeries>();
         var plot = new Rect(
             LeftGutter,

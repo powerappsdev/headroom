@@ -16,6 +16,14 @@
     <ApplicationIcon>Assets\headroom.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <SelfContained>false</SelfContained>
+    <!--
+      WFO0003 tells WinForms apps to set high-DPI mode through
+      Application.SetHighDpiMode instead of the manifest. This is a WPF app that
+      enables WinForms only for NotifyIcon; WPF reads per-monitor v2 awareness
+      from the manifest at process start, and that awareness is what keeps the
+      deck positioned correctly against the tray on a mixed-DPI desktop.
+    -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
