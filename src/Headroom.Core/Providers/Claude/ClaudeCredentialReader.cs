@@ -45,7 +45,13 @@ public sealed record ClaudeCredential(
         CredentialStatus.ProfileMissing => "This profile folder does not exist yet.",
         CredentialStatus.FileMissing => "No stored sign-in. Run claude /login for this profile.",
         CredentialStatus.NoToken => "The stored sign-in has no access token. Sign in again.",
-        CredentialStatus.Expired => "Idle - the CLI renews this the next time you use the account.",
+        // Naming the action matters: an account that is only ever used through
+        // the desktop app can sit with an expired CLI token indefinitely, and
+        // "renews on next use" alone leaves someone waiting for something that
+        // will not happen on its own.
+        CredentialStatus.Expired =>
+            "Idle - the stored CLI sign-in has expired. Run claude once in a terminal to renew it, "
+            + "then press Refresh. Headroom never renews a token itself.",
         CredentialStatus.Unreadable => "The stored sign-in could not be read.",
         _ => null,
     };

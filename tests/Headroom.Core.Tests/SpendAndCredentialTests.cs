@@ -145,7 +145,9 @@ public static class CredentialTests
 
         Check.Equal(CredentialStatus.Expired, credential.Status);
         Check.Equal(AccountAvailability.Idle, credential.ToAvailability());
-        Check.Contains("renews", credential.Explain());
+        Check.Contains("expired", credential.Explain());
+        Check.Contains("Run claude once", credential.Explain(),
+            "an idle account needs to be told what actually renews it");
         Check.Null(credential.AccessToken, "an expired credential must not carry its token onward");
     }
 
