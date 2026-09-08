@@ -76,7 +76,7 @@ public static class HistoryStoreTests
     {
         using var workspace = new TempWorkspace();
         var store = new UsageHistoryStore(workspace.Paths);
-        var at = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+        var at = Moment.At("2026-09-07T12:00:00Z");
 
         await store.AppendAsync("acct", new[]
         {
@@ -96,7 +96,7 @@ public static class HistoryStoreTests
     {
         using var workspace = new TempWorkspace();
         var store = new UsageHistoryStore(workspace.Paths);
-        var at = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+        var at = Moment.At("2026-09-07T12:00:00Z");
 
         await store.AppendAsync("acct", new[]
         {
@@ -112,7 +112,7 @@ public static class HistoryStoreTests
     {
         using var workspace = new TempWorkspace();
         var store = new UsageHistoryStore(workspace.Paths);
-        var at = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+        var at = Moment.At("2026-09-07T12:00:00Z");
         var window = new[] { new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = 10 } };
 
         await store.AppendAsync("one", window, at);
@@ -127,7 +127,7 @@ public static class HistoryStoreTests
     {
         using var workspace = new TempWorkspace();
         var store = new UsageHistoryStore(workspace.Paths);
-        var at = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+        var at = Moment.At("2026-09-07T12:00:00Z");
 
         await store.AppendAsync("acct",
             new[] { new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = 10 } }, at);
@@ -141,7 +141,7 @@ public static class HistoryStoreTests
     [Test("Downsampling keeps the peak, because the peak is what blocked you")]
     public static void DownsampleKeepsPeaks()
     {
-        var start = DateTimeOffset.Parse("2026-09-01T00:00:00Z");
+        var start = Moment.At("2026-09-01T00:00:00Z");
         var points = Enumerable.Range(0, 1000)
             .Select(i => new HistoryPoint(start.AddMinutes(i), "a", "5-hour", i == 500 ? 99d : 10d))
             .ToList();
@@ -155,7 +155,7 @@ public static class HistoryStoreTests
     [Test]
     public static void DownsampleLeavesSmallSeriesAlone()
     {
-        var start = DateTimeOffset.Parse("2026-09-01T00:00:00Z");
+        var start = Moment.At("2026-09-01T00:00:00Z");
         var points = Enumerable.Range(0, 10)
             .Select(i => new HistoryPoint(start.AddMinutes(i), "a", "5-hour", i))
             .ToList();
@@ -170,10 +170,10 @@ public static class HistoryStoreTests
         var store = new UsageHistoryStore(workspace.Paths);
         var window = new[] { new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = 10 } };
 
-        await store.AppendAsync("acct", window, DateTimeOffset.Parse("2026-01-15T00:00:00Z"));
-        await store.AppendAsync("acct", window, DateTimeOffset.Parse("2026-09-01T00:00:00Z"));
+        await store.AppendAsync("acct", window, Moment.At("2026-01-15T00:00:00Z"));
+        await store.AppendAsync("acct", window, Moment.At("2026-09-01T00:00:00Z"));
 
-        var removed = store.Prune(30, DateTimeOffset.Parse("2026-09-07T00:00:00Z"));
+        var removed = store.Prune(30, Moment.At("2026-09-07T00:00:00Z"));
 
         Check.Equal(1, removed);
         Check.False(File.Exists(Path.Combine(workspace.Paths.HistoryDirectory, "usage-2026-01.jsonl")));
@@ -260,7 +260,7 @@ public static class SettingsStoreTests
 
 public static class RefreshCoordinatorTests
 {
-    private static readonly DateTimeOffset Start = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+    private static readonly DateTimeOffset Start = Moment.At("2026-09-07T12:00:00Z");
 
     private static AccountDefinition Account(string id = "a") => new()
     {
@@ -270,7 +270,7 @@ public static class RefreshCoordinatorTests
         ProfileDirectory = "/tmp/profile",
     };
 
-    private static IReadOnlyList<UsageWindow> Windows(double used) => new[]
+    private static UsageWindow[] Windows(double used) => new[]
     {
         new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = used },
     };

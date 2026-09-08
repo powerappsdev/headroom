@@ -6,6 +6,18 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!--
+      The test suite exercises the pure interpretation seams of each provider
+      (ClaudeUsageProvider.Interpret, CodexUsageProvider.Interpret,
+      CodexAppServerClient.Classify), which are internal because nothing outside
+      this assembly should call them. Opening them to the test assembly keeps
+      the public surface honest without making the tests reach through a socket
+      or a process to cover the branches.
+    -->
+    <InternalsVisibleTo Include="Headroom.Core.Tests" />
+  </ItemGroup>
+
   <!--
     Deliberately zero PackageReference entries. Everything Headroom needs is in
     the base class library, so `dotnet build` works on a fresh machine with no

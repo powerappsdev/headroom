@@ -14,7 +14,6 @@
     <AssemblyName>Headroom</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\headroom.ico</ApplicationIcon>
-    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <SelfContained>false</SelfContained>
   </PropertyGroup>

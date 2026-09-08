@@ -92,8 +92,10 @@ public sealed class AppHost : IDisposable
         if (!string.Equals(previous.CodexCommand, _settings.CodexCommand, StringComparison.OrdinalIgnoreCase))
         {
             if (deckHandler is not null) _coordinator.DeckUpdated -= deckHandler;
+            var outgoing = _coordinator;
             _coordinator = BuildCoordinator();
             if (deckHandler is not null) _coordinator.DeckUpdated += deckHandler;
+            outgoing.Dispose();
         }
 
         _coordinator.SetAccounts(_settings.Accounts);
@@ -164,6 +166,9 @@ public sealed class AppHost : IDisposable
     public void Dispose()
     {
         _shutdown.Cancel();
+        _coordinator.Dispose();
+        History.Dispose();
+        _settingsStore.Dispose();
         _http.Dispose();
         _shutdown.Dispose();
     }

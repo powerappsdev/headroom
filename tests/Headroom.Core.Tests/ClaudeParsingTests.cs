@@ -53,10 +53,10 @@ public static class ClaudeParsingTests
         var windows = ClaudeUsageParser.Parse(RealisticPayload);
 
         Check.Equal(
-            DateTimeOffset.Parse("2026-07-19T20:00:00Z").ToUniversalTime(),
+            Moment.At("2026-07-19T20:00:00Z").ToUniversalTime(),
             Check.NotNullValue(Find(windows, "5-hour").ResetsAt).ToUniversalTime());
         Check.Equal(
-            DateTimeOffset.Parse("2026-07-23T00:59:59Z").ToUniversalTime(),
+            Moment.At("2026-07-23T00:59:59Z").ToUniversalTime(),
             Check.NotNullValue(Find(windows, "Opus weekly").ResetsAt).ToUniversalTime());
     }
 

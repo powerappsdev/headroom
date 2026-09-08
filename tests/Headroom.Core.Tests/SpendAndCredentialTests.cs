@@ -120,7 +120,7 @@ public static class SpendTests
 
 public static class CredentialTests
 {
-    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+    private static readonly DateTimeOffset Now = Moment.At("2026-09-07T12:00:00Z");
 
     [Test]
     public static void ReadsAValidCredential()

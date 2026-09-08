@@ -21,7 +21,7 @@ namespace Headroom.Core.Refresh;
 /// shows "here is what I last knew, and here is why it is old" instead of
 /// blanking out — which is both less useful and less honest.
 /// </remarks>
-public sealed class RefreshCoordinator
+public sealed class RefreshCoordinator : IDisposable
 {
     private readonly IReadOnlyDictionary<ProviderKind, IUsageProvider> _providers;
     private readonly UsageHistoryStore? _history;
@@ -31,6 +31,7 @@ public sealed class RefreshCoordinator
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     private IReadOnlyList<AccountDefinition> _accounts = Array.Empty<AccountDefinition>();
+    private bool _disposed;
 
     public RefreshCoordinator(
         IReadOnlyDictionary<ProviderKind, IUsageProvider> providers,
@@ -83,6 +84,10 @@ public sealed class RefreshCoordinator
     /// </summary>
     public async Task<DeckSnapshot> RefreshAsync(bool force = false, CancellationToken cancellationToken = default)
     {
+        // A coordinator replaced mid-session (or a shutdown mid-refresh) must
+        // return the last snapshot rather than fault on a disposed lock.
+        if (_disposed) return Current;
+
         await _refreshLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -108,6 +113,13 @@ public sealed class RefreshCoordinator
 
         DeckUpdated?.Invoke(this, Current);
         return Current;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _refreshLock.Dispose();
     }
 
     private bool IsDue(string accountId, DateTimeOffset now) =>

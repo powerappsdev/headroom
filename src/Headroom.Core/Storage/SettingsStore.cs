@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -17,7 +18,7 @@ namespace Headroom.Core.Storage;
 /// file that fails to parse is backed up rather than deleted, because it is the
 /// user's account list and losing it silently would be unforgivable.
 /// </remarks>
-public sealed class SettingsStore
+public sealed class SettingsStore : IDisposable
 {
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -28,6 +29,7 @@ public sealed class SettingsStore
 
     private readonly HeadroomPaths _paths;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private bool _disposed;
 
     public SettingsStore(HeadroomPaths paths) => _paths = paths;
 
@@ -61,6 +63,10 @@ public sealed class SettingsStore
 
     public async Task SaveAsync(HeadroomSettings settings, CancellationToken cancellationToken = default)
     {
+        // A save already in flight when the app quits must not fault on a
+        // disposed lock; there is nothing useful left to write at that point.
+        if (_disposed) return;
+
         _paths.EnsureCreated();
         var payload = JsonSerializer.Serialize(settings.Normalized(), Options);
 
@@ -77,11 +83,18 @@ public sealed class SettingsStore
         }
     }
 
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _writeLock.Dispose();
+    }
+
     private void QuarantineUnreadableFile()
     {
         try
         {
-            var backup = _paths.SettingsFile + ".corrupt-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var backup = _paths.SettingsFile + ".corrupt-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
             File.Move(_paths.SettingsFile, backup, overwrite: true);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)

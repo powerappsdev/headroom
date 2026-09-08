@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -90,6 +91,15 @@ public static class Check
         string s => $"\"{s}\"",
         _ => value.ToString() ?? "<null>",
     };
+}
+
+/// <summary>Fixed instants for tests, always parsed culture-invariantly.</summary>
+public static class Moment
+{
+    public static DateTimeOffset At(string iso) => DateTimeOffset.Parse(
+        iso,
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
 }
 
 public static class TestRunner

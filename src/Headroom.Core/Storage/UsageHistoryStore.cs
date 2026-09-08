@@ -29,12 +29,13 @@ public sealed record HistoryPoint(DateTimeOffset At, string AccountId, string Sc
 /// by deleting a file. Nothing about SQLite would improve any of that, and it
 /// would add a native dependency to an app that currently has none.
 /// </remarks>
-public sealed class UsageHistoryStore
+public sealed class UsageHistoryStore : IDisposable
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = false };
 
     private readonly HeadroomPaths _paths;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private bool _disposed;
 
     public UsageHistoryStore(HeadroomPaths paths) => _paths = paths;
 
@@ -45,7 +46,7 @@ public sealed class UsageHistoryStore
         DateTimeOffset at,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(accountId) || windows.Count == 0) return;
+        if (_disposed || string.IsNullOrWhiteSpace(accountId) || windows.Count == 0) return;
 
         var rows = windows
             .Where(w => w.UsedPercent is not null && w.Kind != WindowKind.Spend)
@@ -187,6 +188,13 @@ public sealed class UsageHistoryStore
         }
 
         return removed;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _writeLock.Dispose();
     }
 
     private string FileFor(DateTimeOffset at) =>

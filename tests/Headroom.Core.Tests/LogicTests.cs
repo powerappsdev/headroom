@@ -25,7 +25,7 @@ internal static class Sample
                     Scope = "5-hour",
                     Kind = WindowKind.Session,
                     UsedPercent = 100d - remaining,
-                    ResetsAt = DateTimeOffset.Parse("2026-09-07T20:00:00Z"),
+                    ResetsAt = Moment.At("2026-09-07T20:00:00Z"),
                 },
             }
             : Array.Empty<UsageWindow>();
@@ -42,7 +42,7 @@ internal static class Sample
     }
 
     public static DeckSnapshot Deck(params AccountSnapshot[] accounts) =>
-        new() { Accounts = accounts, GeneratedAt = DateTimeOffset.Parse("2026-09-07T12:00:00Z") };
+        new() { Accounts = accounts, GeneratedAt = Moment.At("2026-09-07T12:00:00Z") };
 }
 
 public static class ThresholdTests
@@ -147,7 +147,7 @@ public static class ThresholdWatcherTests
 
 public static class StalenessTests
 {
-    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+    private static readonly DateTimeOffset Now = Moment.At("2026-09-07T12:00:00Z");
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(5);
 
     [Test]
@@ -288,12 +288,12 @@ public static class DeckTests
             AccountId = "a", DisplayName = "a", Provider = ProviderKind.Claude,
             Windows = new[]
             {
-                new UsageWindow { Scope = "weekly", Kind = WindowKind.Weekly, UsedPercent = 5, ResetsAt = DateTimeOffset.Parse("2026-09-12T00:00:00Z") },
-                new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = 5, ResetsAt = DateTimeOffset.Parse("2026-09-07T15:00:00Z") },
+                new UsageWindow { Scope = "weekly", Kind = WindowKind.Weekly, UsedPercent = 5, ResetsAt = Moment.At("2026-09-12T00:00:00Z") },
+                new UsageWindow { Scope = "5-hour", Kind = WindowKind.Session, UsedPercent = 5, ResetsAt = Moment.At("2026-09-07T15:00:00Z") },
             },
         };
 
-        Check.Equal(DateTimeOffset.Parse("2026-09-07T15:00:00Z"), Check.NotNullValue(account.NextReset));
+        Check.Equal(Moment.At("2026-09-07T15:00:00Z"), Check.NotNullValue(account.NextReset));
     }
 
     [Test]
@@ -319,7 +319,7 @@ public static class DeckTests
 
 public static class DisplayTextTests
 {
-    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-07T12:00:00Z");
+    private static readonly DateTimeOffset Now = Moment.At("2026-09-07T12:00:00Z");
 
     [Test]
     public static void PercentTextIsRounded()
