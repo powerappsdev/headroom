@@ -1,0 +1,122 @@
+<Window x:Class="Headroom.App.Views.HistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Headroom.App.Controls"
+        xmlns:vm="clr-namespace:Headroom.App.ViewModels"
+        Title="Headroom — Usage history"
+        Width="880"
+        Height="560"
+        MinWidth="640"
+        MinHeight="420"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True"
+        Background="{DynamicResource SurfaceBrush}"
+        FontFamily="{StaticResource UiFont}">
+
+  <Grid Margin="20,16,20,18">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!-- Title -->
+    <StackPanel Grid.Row="0" Margin="0,0,0,14">
+      <TextBlock Text="{Binding AccountName}"
+                 Style="{StaticResource BaseText}"
+                 FontSize="{StaticResource FontSizeHeadline}"
+                 FontWeight="SemiBold" />
+      <TextBlock Style="{StaticResource CaptionText}"
+                 Margin="0,3,0,0"
+                 Text="Capacity remaining over time. Higher is better; the dashed guides are your warning and critical thresholds." />
+    </StackPanel>
+
+    <!-- Filters: one row, above the chart -->
+    <Grid Grid.Row="1" Margin="0,0,0,12">
+      <StackPanel Orientation="Horizontal">
+        <ComboBox x:Name="AccountPicker"
+                  Width="200"
+                  Padding="6,4"
+                  DisplayMemberPath="DisplayName"
+                  SelectionChanged="OnAccountChanged" />
+
+        <ComboBox Width="130"
+                  Margin="8,0,0,0"
+                  Padding="6,4"
+                  ItemsSource="{Binding Ranges}"
+                  SelectedItem="{Binding Range}"
+                  DisplayMemberPath="Label" />
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+        <ToggleButton Content="Table"
+                      Style="{StaticResource PillToggle}"
+                      IsChecked="{Binding ShowTable}"
+                      Padding="10,4"
+                      Cursor="Hand"
+                      ToolTip="Show the same data as numbers"
+                      Foreground="{DynamicResource TextSecondaryBrush}" />
+        <Button Style="{StaticResource GhostButton}"
+                Content="Reload"
+                Margin="8,0,0,0"
+                Click="OnReloadClick" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Chart / table -->
+    <Border Grid.Row="2"
+            Background="{DynamicResource SurfaceElevatedBrush}"
+            BorderBrush="{DynamicResource HairlineBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12">
+      <Grid>
+        <controls:HistoryChart x:Name="Chart"
+                               Series="{Binding Series}"
+                               Visibility="{Binding ShowTable, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}" />
+
+        <!--
+          The table is not a fallback. It is the accessibility relief the palette
+          check calls for on the light surface, and some people simply read
+          numbers faster than lines.
+        -->
+        <DataGrid ItemsSource="{Binding TableRows}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  Background="Transparent"
+                  RowBackground="Transparent"
+                  BorderThickness="0"
+                  HorizontalGridLinesBrush="{DynamicResource HairlineBrush}"
+                  Foreground="{DynamicResource TextPrimaryBrush}"
+                  FontSize="{StaticResource FontSizeBody}"
+                  Visibility="{Binding ShowTable, Converter={StaticResource BoolToVisibility}}">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Window" Binding="{Binding Scope}" Width="2*" />
+            <DataGridTextColumn Header="Lowest left" Binding="{Binding Lowest}" Width="*" />
+            <DataGridTextColumn Header="Latest" Binding="{Binding Latest}" Width="*" />
+            <DataGridTextColumn Header="Samples" Binding="{Binding Samples}" Width="*" />
+          </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Style="{StaticResource CaptionText}"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   MaxWidth="380"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap"
+                   LineHeight="18"
+                   Text="{Binding EmptyMessage}"
+                   Visibility="{Binding HasData, Converter={StaticResource BoolToVisibility}, ConverterParameter=Invert}" />
+      </Grid>
+    </Border>
+
+    <TextBlock Grid.Row="3"
+               Style="{StaticResource CaptionText}"
+               Margin="2,10,0,0"
+               TextWrapping="Wrap"
+               Text="History is recorded locally from Headroom's own refreshes, so it starts the first time it polls — there is no backfill of usage from before you installed it." />
+  </Grid>
+</Window>

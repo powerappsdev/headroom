@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Headroom.Core</RootNamespace>
+    <AssemblyName>Headroom.Core</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!--
+    Deliberately zero PackageReference entries. Everything Headroom needs is in
+    the base class library, so `dotnet build` works on a fresh machine with no
+    network and nothing can break in a restore.
+  -->
+
+</Project>

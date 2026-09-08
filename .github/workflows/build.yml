@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # WPF needs a Windows runner. The Core library and the test suite are
+    # platform-neutral, but building the solution as a whole does not work
+    # anywhere else.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      # The suite is a plain console app, so there is no test framework to
+      # restore and no adapter to configure. A non-zero exit fails the job.
+      - name: Test
+        run: dotnet run --project tests/Headroom.Core.Tests --configuration Release

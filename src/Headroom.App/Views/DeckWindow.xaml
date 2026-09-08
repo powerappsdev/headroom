@@ -1,0 +1,306 @@
+<Window x:Class="Headroom.App.Views.DeckWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:controls="clr-namespace:Headroom.App.Controls"
+        xmlns:vm="clr-namespace:Headroom.App.ViewModels"
+        Title="Headroom"
+        Width="392"
+        MaxHeight="620"
+        SizeToContent="Height"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="False"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStartupLocation="Manual"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Ideal"
+        Background="{DynamicResource SurfaceBrush}"
+        FontFamily="{StaticResource UiFont}">
+
+  <Window.Resources>
+    <!--
+      Scoped to the deck rather than made app-wide: this template only handles a
+      vertical bar, and the deck is the one place where horizontal scrolling is
+      disabled outright.
+    -->
+    <Style TargetType="ScrollBar" BasedOn="{StaticResource SlimScrollBar}" />
+  </Window.Resources>
+
+  <shell:WindowChrome.WindowChrome>
+    <!-- No caption, no resize grip: the deck is a popover, not a window. -->
+    <shell:WindowChrome CaptionHeight="0"
+                        ResizeBorderThickness="0"
+                        GlassFrameThickness="0"
+                        CornerRadius="0"
+                        UseAeroCaptionButtons="False" />
+  </shell:WindowChrome.WindowChrome>
+
+  <Border BorderBrush="{DynamicResource HairlineBrush}" BorderThickness="1" CornerRadius="8">
+    <Grid Margin="0">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <!-- Header -->
+      <Grid Grid.Row="0" Margin="16,13,10,9">
+        <TextBlock Text="Headroom"
+                   Style="{StaticResource BaseText}"
+                   FontSize="{StaticResource FontSizeTitle}"
+                   FontWeight="SemiBold"
+                   VerticalAlignment="Center" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button x:Name="RefreshButton"
+                  Style="{StaticResource GhostButton}"
+                  Click="OnRefreshClick"
+                  ToolTip="Refresh now"
+                  Padding="7,3">
+            <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
+          </Button>
+          <Button Style="{StaticResource GhostButton}"
+                  Click="OnHistoryClick"
+                  ToolTip="Usage history"
+                  Padding="7,3">
+            <!-- Drawn rather than a font glyph, so the icon cannot depend on which
+                 Segoe MDL2 build a machine happens to have. -->
+            <Canvas Width="12" Height="12">
+              <Rectangle Canvas.Left="0" Canvas.Top="6" Width="2.5" Height="6" RadiusX="1" RadiusY="1"
+                         Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+              <Rectangle Canvas.Left="4.75" Canvas.Top="2" Width="2.5" Height="10" RadiusX="1" RadiusY="1"
+                         Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+              <Rectangle Canvas.Left="9.5" Canvas.Top="8" Width="2.5" Height="4" RadiusX="1" RadiusY="1"
+                         Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+            </Canvas>
+          </Button>
+          <Button Style="{StaticResource GhostButton}"
+                  Click="OnSettingsClick"
+                  ToolTip="Settings"
+                  Padding="7,3">
+            <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <!-- Accounts -->
+      <ScrollViewer Grid.Row="1" Style="{StaticResource DeckScrollViewer}" Margin="0,0,0,4">
+        <StackPanel>
+          <ItemsControl ItemsSource="{Binding Cards}" Margin="10,0,10,6">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate DataType="{x:Type vm:AccountCardViewModel}">
+                <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                              Margin="0,0,0,6"
+                              HorizontalContentAlignment="Stretch"
+                              Cursor="Hand"
+                              Focusable="True">
+                  <ToggleButton.Template>
+                    <ControlTemplate TargetType="ToggleButton">
+                      <Border x:Name="Card"
+                              Background="{DynamicResource SurfaceElevatedBrush}"
+                              BorderBrush="{DynamicResource HairlineBrush}"
+                              BorderThickness="1"
+                              CornerRadius="8"
+                              Padding="12,10,12,11">
+                        <ContentPresenter />
+                      </Border>
+                      <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                          <Setter TargetName="Card" Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                        </Trigger>
+                      </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                  </ToggleButton.Template>
+
+                  <StackPanel>
+                    <!-- Title row -->
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+
+                      <!-- Provider mark: a coloured dot, so identity never rests on the text alone. -->
+                      <Ellipse Grid.Column="0"
+                               Width="7" Height="7"
+                               Margin="0,0,7,0"
+                               VerticalAlignment="Center">
+                        <Ellipse.Style>
+                          <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="{DynamicResource CodexMarkBrush}" />
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding IsClaude}" Value="True">
+                                <Setter Property="Fill" Value="{DynamicResource ClaudeMarkBrush}" />
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </Ellipse.Style>
+                      </Ellipse>
+
+                      <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <TextBlock Text="{Binding DisplayName}"
+                                   Style="{StaticResource BaseText}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding Identity}" />
+                        <TextBlock Text="&#xE73E;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="9"
+                                   Margin="6,1,0,0"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   ToolTip="Shown in the notification area"
+                                   Visibility="{Binding IsTraySource, Converter={StaticResource BoolToVisibility}}" />
+                      </StackPanel>
+
+                      <TextBlock Grid.Column="2"
+                                 Text="{Binding HeadlineValue}"
+                                 Style="{StaticResource BaseText}"
+                                 FontWeight="SemiBold"
+                                 VerticalAlignment="Center" />
+                    </Grid>
+
+                    <!-- Subtitle row -->
+                    <Grid Margin="14,1,0,7">
+                      <TextBlock Text="{Binding SubtitleText}" Style="{StaticResource CaptionText}" />
+                      <TextBlock Text="{Binding HeadlineReset}"
+                                 Style="{StaticResource CaptionText}"
+                                 HorizontalAlignment="Right"
+                                 Visibility="{Binding HeadlineReset, Converter={StaticResource StringToVisibility}}" />
+                    </Grid>
+
+                    <controls:MeterBar Value="{Binding Fill}"
+                                       Tone="{Binding Tone}"
+                                       BarHeight="4"
+                                       Margin="14,0,0,0" />
+
+                    <!-- Card notice: idle stays neutral, real problems go amber. -->
+                    <Grid Margin="14,8,0,0"
+                          Visibility="{Binding HasNotice, Converter={StaticResource BoolToVisibility}}">
+                      <TextBlock Text="{Binding NoticeText}"
+                                 ToolTip="{Binding NoticeTooltip}"
+                                 TextTrimming="CharacterEllipsis">
+                        <TextBlock.Style>
+                          <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding NoticeIsAlarming}" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource MeterWarningBrush}" />
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </TextBlock.Style>
+                      </TextBlock>
+                    </Grid>
+
+                    <!-- Expanded detail -->
+                    <StackPanel Margin="14,10,0,0"
+                                Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
+                      <ItemsControl ItemsSource="{Binding Windows}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="{x:Type vm:WindowRowViewModel}">
+                            <StackPanel Margin="0,0,0,9">
+                              <Grid>
+                                <TextBlock Text="{Binding Scope}" Style="{StaticResource CaptionText}" />
+                                <TextBlock Text="{Binding ResetText}"
+                                           Style="{StaticResource CaptionText}"
+                                           HorizontalAlignment="Right"
+                                           ToolTip="{Binding ResetTooltip}"
+                                           Visibility="{Binding ResetText, Converter={StaticResource StringToVisibility}}" />
+                              </Grid>
+                              <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <controls:MeterBar Grid.Column="0"
+                                                   Value="{Binding Fill}"
+                                                   Tone="{Binding Tone}"
+                                                   BarHeight="4"
+                                                   VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ValueText}"
+                                           Style="{StaticResource CaptionText}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Margin="10,0,0,0"
+                                           VerticalAlignment="Center" />
+                              </Grid>
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+
+                      <Grid Margin="0,1,0,1">
+                        <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource CaptionText}" />
+                        <Button Content="History"
+                                Style="{StaticResource GhostButton}"
+                                FontSize="{StaticResource FontSizeCaption}"
+                                Padding="7,2"
+                                HorizontalAlignment="Right"
+                                Click="OnCardHistoryClick"
+                                Tag="{Binding AccountId}" />
+                      </Grid>
+                    </StackPanel>
+                  </StackPanel>
+                </ToggleButton>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- Empty state -->
+          <StackPanel Margin="22,10,22,22"
+                      Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="No accounts yet"
+                       Style="{StaticResource BaseText}"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,6" />
+            <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap" LineHeight="16"
+                       Text="Headroom looks for the profiles the CLIs already use — ~/.claude and ~/.codex — and adopts them automatically. If nothing turned up, sign in with the CLI once, then add the folder in Settings." />
+            <Button Content="Open settings"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Left"
+                    Margin="0,12,0,0"
+                    Click="OnSettingsClick" />
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Footer -->
+      <Border Grid.Row="2"
+              BorderBrush="{DynamicResource HairlineBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="16,9,10,10">
+        <Grid>
+          <StackPanel>
+            <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource CaptionText}" />
+            <TextBlock Text="{Binding FooterText}"
+                       Margin="0,2,0,0"
+                       TextTrimming="CharacterEllipsis">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                  <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding FooterIsAlarming}" Value="True">
+                      <Setter Property="Foreground" Value="{DynamicResource MeterWarningBrush}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </StackPanel>
+
+          <Button Style="{StaticResource GhostButton}"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Center"
+                  FontSize="{StaticResource FontSizeCaption}"
+                  Click="OnRefreshClick"
+                  IsEnabled="{Binding IsRefreshing, Converter={StaticResource InverseBoolean}}"
+                  Content="Refresh" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</Window>

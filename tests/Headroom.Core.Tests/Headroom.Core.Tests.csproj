@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Headroom.Core.Tests</RootNamespace>
+    <AssemblyName>Headroom.Core.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Headroom.Core\Headroom.Core.csproj" />
+  </ItemGroup>
+
+</Project>
